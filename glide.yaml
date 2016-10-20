@@ -1,7 +1,5 @@
 package: github.com/hongchaodeng/soak-test-debugger
 import:
-- package: github.com/Sirupsen/logrus
-  version: v0.10.0
 - package: k8s.io/kubernetes
   version: v1.4.3
   subpackages:

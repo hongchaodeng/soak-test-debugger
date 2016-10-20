@@ -5,9 +5,9 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"log"
 	"time"
 
-	"github.com/Sirupsen/logrus"
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/client/unversioned"
 	"k8s.io/kubernetes/pkg/labels"
@@ -29,31 +29,27 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Println("initial delaying...")
-	time.Sleep(30 * time.Second) // initial delay
-
 	for {
-		time.Sleep(20 * time.Second)
+		time.Sleep(10 * time.Second)
 		pods, err := kubecli.Pods(namespace).List(api.ListOptions{
 			LabelSelector: labels.SelectorFromSet(map[string]string{
 				"app": "etcd",
 			}),
 		})
 		if err != nil {
-			logrus.Errorf("fail to list pods: %v", err)
+			log.Printf("fail to list pods: %v", err)
 			continue
 		}
 		// print all pods
 		for i := range pods.Items {
 			pod := &pods.Items[i]
-			logrus.Infof("pod (%v) ======", pod.Name)
-			logrus.Infof("pod status: %v %v", pod.Status.Phase, pod.Status.Conditions)
+			log.Printf("pod (%v) %v", pod.Name, pod.Status.Phase)
 			if pod.Status.Phase != api.PodRunning {
 				continue
 			}
 			buf := bytes.NewBuffer(nil)
 			getLogs(kubecli, namespace, pod.Name, "etcd", buf)
-			logrus.Infof("pod (%v) logs === %v", pod.Name, buf.String())
+			log.Printf("pod (%v) logs ===\n%v\n", pod.Name, buf.String())
 		}
 
 		// print all services
@@ -63,24 +59,24 @@ func main() {
 			}),
 		})
 		if err != nil {
-			logrus.Errorf("fail to list services: %v", err)
+			log.Printf("fail to list services: %v", err)
 			continue
 		}
 
 		for i := range svcs.Items {
 			svc := &svcs.Items[i]
-			logrus.Infof("svc (%v/%v) ======", svc.Name, svc.Spec.ClusterIP)
+			log.Printf("svc (%v/%v) ======", svc.Name, svc.Spec.ClusterIP)
 
 			r, err := kubecli.Client.Get(fmt.Sprintf("http://%s:2379", svc.Spec.ClusterIP))
 			if err != nil {
-				logrus.Errorf("fail to get %s:2380: %v", svc.Spec.ClusterIP, err)
+				log.Printf("fail to get %s:2380: %v", svc.Spec.ClusterIP, err)
 				continue
 			}
 			r.Body.Close()
 
 			r, err = kubecli.Client.Get(fmt.Sprintf("http://%s:2379", svc.Spec.ClusterIP))
 			if err != nil {
-				logrus.Errorf("fail to get %s:2379: %v", svc.Spec.ClusterIP, err)
+				log.Printf("fail to get %s:2379: %v", svc.Spec.ClusterIP, err)
 			}
 			r.Body.Close()
 		}
@@ -94,7 +90,7 @@ func getLogs(kubecli *unversioned.Client, ns, p, c string, out io.Writer) error 
 		Name(p).
 		SubResource("log").
 		Param("container", c).
-		Param("tailLines", "10")
+		Param("tailLines", "20")
 
 	readCloser, err := req.Stream()
 	if err != nil {
