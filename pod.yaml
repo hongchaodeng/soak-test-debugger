@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: soak-test-debugger
+  labels:
+    name: soak-test-debugger
+spec:
+  containers:
+  -
+    name: soak-test-debugger
+    image: gcr.io/coreos-k8s-scale-testing/soak-test-debugger
+    env:
+      - name: MY_POD_NAMESPACE
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.namespace

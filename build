@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+mkdir -p _output/bin || true
+
+CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o _output/bin/soak-test-debugger
+
+docker build --tag "${IMAGE}" .
+gcloud docker -- push "${IMAGE}"
