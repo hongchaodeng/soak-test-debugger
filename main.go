@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"flag"
 	"io"
-	"log"
 	"time"
 
+	"github.com/Sirupsen/logrus"
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/client/unversioned"
 	"k8s.io/kubernetes/pkg/labels"
@@ -20,6 +20,8 @@ var (
 func init() {
 	flag.StringVar(&namespace, "ns", "default", "")
 	flag.Parse()
+
+	logrus.SetFormatter(&logrus.JSONFormatter{})
 }
 
 func main() {
@@ -36,19 +38,19 @@ func main() {
 			}),
 		})
 		if err != nil {
-			log.Printf("fail to list pods: %v", err)
+			logrus.Errorf("fail to list pods: %v", err)
 			continue
 		}
 		// print all pods
 		for i := range pods.Items {
 			pod := &pods.Items[i]
-			log.Printf("pod (%v) %v", pod.Name, pod.Status.Phase)
+			logrus.Errorf("pod (%v) %v", pod.Name, pod.Status.Phase)
 			if pod.Status.Phase != api.PodRunning {
 				continue
 			}
 			buf := bytes.NewBuffer(nil)
 			getLogs(kubecli, namespace, pod.Name, "etcd", buf)
-			log.Printf("pod (%v) logs ===\n%v\n", pod.Name, buf.String())
+			logrus.Infof("pod (%v) logs ===\n%v\n", pod.Name, buf.String())
 		}
 
 		// print all services
@@ -58,19 +60,19 @@ func main() {
 			}),
 		})
 		if err != nil {
-			log.Printf("fail to list services: %v", err)
+			logrus.Errorf("fail to list services: %v", err)
 			continue
 		}
 
 		for i := range svcs.Items {
 			svc := &svcs.Items[i]
-			log.Printf("svc (%v/%v) ======", svc.Name, svc.Spec.ClusterIP)
+			logrus.Infof("svc (%v/%v) ======", svc.Name, svc.Spec.ClusterIP)
 			ep, err := kubecli.Endpoints(namespace).Get(svc.Name)
 			if err != nil {
-				log.Printf("fail to get endpoints for svc (%s): %v", svc.Name, err)
+				logrus.Errorf("fail to get endpoints for svc (%s): %v", svc.Name, err)
 				continue
 			}
-			log.Printf("endpoints of svc (%s): %v", svc.Name, ep.Subsets)
+			logrus.Infof("endpoints of svc (%s): %v", svc.Name, ep.Subsets)
 		}
 
 	}
