@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"flag"
-	"fmt"
 	"io"
 	"log"
 	"time"
@@ -66,20 +65,14 @@ func main() {
 		for i := range svcs.Items {
 			svc := &svcs.Items[i]
 			log.Printf("svc (%v/%v) ======", svc.Name, svc.Spec.ClusterIP)
-
-			r, err := kubecli.Client.Get(fmt.Sprintf("http://%s:2379", svc.Spec.ClusterIP))
+			ep, err := kubecli.Endpoints(namespace).Get(svc.Name)
 			if err != nil {
-				log.Printf("fail to get %s:2380: %v", svc.Spec.ClusterIP, err)
+				log.Printf("fail to get endpoints for svc (%s): %v", svc.Name, err)
 				continue
 			}
-			r.Body.Close()
-
-			r, err = kubecli.Client.Get(fmt.Sprintf("http://%s:2379", svc.Spec.ClusterIP))
-			if err != nil {
-				log.Printf("fail to get %s:2379: %v", svc.Spec.ClusterIP, err)
-			}
-			r.Body.Close()
+			log.Printf("endpoints of svc (%s): %v", svc.Name, ep.Subsets)
 		}
+
 	}
 }
 
