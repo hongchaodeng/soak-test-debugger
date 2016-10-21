@@ -44,13 +44,13 @@ func main() {
 		// print all pods
 		for i := range pods.Items {
 			pod := &pods.Items[i]
-			logrus.Infof("pod (%v) %v", pod.Name, pod.Status.Phase)
+			logrus.WithField("etcd_pod", pod.Name).Infof("pod (%v) %v", pod.Name, pod.Status.Phase)
 			if pod.Status.Phase != api.PodRunning {
 				continue
 			}
 			buf := bytes.NewBuffer(nil)
 			getLogs(kubecli, namespace, pod.Name, "etcd", buf)
-			logrus.Infof("pod (%v) logs ===\n%v\n", pod.Name, buf.String())
+			logrus.WithField("etcd_pod", pod.Name).Infof("pod (%v) logs ===\n%v\n", pod.Name, buf.String())
 		}
 
 		// print all services
@@ -66,13 +66,13 @@ func main() {
 
 		for i := range svcs.Items {
 			svc := &svcs.Items[i]
-			logrus.Infof("svc (%v/%v) ======", svc.Name, svc.Spec.ClusterIP)
+			logrus.WithField("etcd_svc", svc.Name).Infof("svc (%v/%v) ======", svc.Name, svc.Spec.ClusterIP)
 			ep, err := kubecli.Endpoints(namespace).Get(svc.Name)
 			if err != nil {
 				logrus.Errorf("fail to get endpoints for svc (%s): %v", svc.Name, err)
 				continue
 			}
-			logrus.Infof("endpoints of svc (%s): %v", svc.Name, ep.Subsets)
+			logrus.WithField("etcd_svc", svc.Name).Infof("endpoints of svc (%s): %v", svc.Name, ep.Subsets)
 		}
 
 	}
