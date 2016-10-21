@@ -44,7 +44,7 @@ func main() {
 		// print all pods
 		for i := range pods.Items {
 			pod := &pods.Items[i]
-			logrus.Errorf("pod (%v) %v", pod.Name, pod.Status.Phase)
+			logrus.Infof("pod (%v) %v", pod.Name, pod.Status.Phase)
 			if pod.Status.Phase != api.PodRunning {
 				continue
 			}
