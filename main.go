@@ -45,12 +45,13 @@ func main() {
 		for i := range pods.Items {
 			pod := &pods.Items[i]
 			logrus.WithField("etcd_pod", pod.Name).Infof("pod (%v) %v", pod.Name, pod.Status.Phase)
-			if pod.Status.Phase != api.PodRunning {
-				continue
+
+			switch pod.Status.Phase {
+			case api.PodRunning, api.PodSucceeded, api.PodFailed:
+				buf := bytes.NewBuffer(nil)
+				getLogs(kubecli, namespace, pod.Name, "etcd", buf)
+				logrus.WithField("etcd_pod", pod.Name).Infof("pod (%v) logs ===\n%v\n", pod.Name, buf.String())
 			}
-			buf := bytes.NewBuffer(nil)
-			getLogs(kubecli, namespace, pod.Name, "etcd", buf)
-			logrus.WithField("etcd_pod", pod.Name).Infof("pod (%v) logs ===\n%v\n", pod.Name, buf.String())
 		}
 
 		// print all services
